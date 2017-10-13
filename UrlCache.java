@@ -63,16 +63,15 @@ public class UrlCache {
      */
 	public void getter(String url) throws IOException {
 		
-		//Initialize variables required to parse the url
-		String hostName = "";
-		String pathName = "";
-		int portNum = 0;
+		
 		
 		// Initialize input and output streams
 		PrintWriter outputStream;
 				
 		// Initialize values pulled from header
 		String catalogModifiedDate = "";
+
+
 
 		byte[] http_object_bytes = new byte[4096];
 		int numByteRead = 0;
@@ -81,20 +80,9 @@ public class UrlCache {
 		byte[] http_response_header_bytes = new byte[4096];
 		int indexCount = 0;
 		
-
-
-		// Set hostname/portNum based on above variables
-		if(url.indexOf("/") == -1) {
-			hostName = url.substring(0, url.indexOf("/"));	
-			portNum = 80;
-		} else {
-			hostName = url.substring(0, url.indexOf(":"));
-			portNum = (int) Integer.parseInt(url.substring(url.indexOf(":") + 1, url.indexOf("/")));
-		}
-				
-		// Set pathname
-		pathName = url.substring(url.indexOf("/"));
-
+		String hostName = hostNameParser(url);
+		String pathName = pathNameParser(url);
+		int portNum = portNumParser(url);
 
 		try {
 			
@@ -194,10 +182,15 @@ public class UrlCache {
 					
 	}
 	
+    /**
+     * Returns the Last-Modified time associated with the object specified by the parameter url.
+	 *
+     * @param url 	URL of the object 
+	 * @return the Last-Modified time in millisecond as in Date.getTime()
+     */
 	public long LaMo(String url, int counter) throws RuntimeException {
 
 		if(catalog.containsKey(url)) {
-			int counter;
 			String lastModified = catalog.get(url);
 			SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss zzz");
 			Date date = format.parse(lastModified, new ParsePosition(0));
@@ -209,6 +202,37 @@ public class UrlCache {
 		}
 
 	}
+	
+	public String hostNameParser(String url) {
+		String hostName;
+		
+		// Set hostname/portNum based on above variables
+		if(url.indexOf(":") == -1) {
+			hostName = url.substring(0, url.indexOf("/"));	
+		} else {
+			hostName = url.substring(0, url.indexOf(":"));
+		}
+		return hostName;
+	}
+	
+	public String pathNameParser(String url) {
+
+		return url.substring(url.indexOf("/"));
+	}
+	
+	
+	public int portNumParser(String url) {
+		int portNum = 0;
+		
+		if(url.indexOf(":") == -1) {
+			portNum = 80;
+		} else {
+			portNum = (int) Integer.parseInt(url.substring(url.indexOf(":") + 1, url.indexOf("/")));
+		}
+		
+		return portNum;
+	}
+	
 	
 	public String gethttpResString() {
 		return httpResString;

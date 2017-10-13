@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses; 
  
 @RunWith(Suite.class) 
-@SuiteClasses({}) 
+@SuiteClasses({headerParserTester.class, URLMethodTester.class}) 
 public class TestAll {
 	
 } 
