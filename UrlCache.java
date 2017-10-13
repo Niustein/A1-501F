@@ -1,22 +1,32 @@
+package A1;
+
 /**
  * Assignment #1 - Refactoring
  * CPSC 501
  * Samuel Niu
  * 10047006
  */
-
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.io.*;
-import java.util.*;
+
 
 public class UrlCache {
 
 	HashMap <String, String> catalog;
+	private String httpResString = "";
 	
     /**
      * Default constructor to initialize data structures used for caching/etc
@@ -24,9 +34,10 @@ public class UrlCache {
 	 *
      * @throws IOException if encounters any errors/exceptions
      */
-	public UrlCache() throws IOException {		
+	@SuppressWarnings("unchecked")
+	public UrlCache(boolean ignoreCata) throws IOException {		
 		try {
-			ObjectInputStream ObjectInputStream = new ObjectInputStream(new FileInputStream("catalogLoc"));
+			ObjectInputStream ObjectInputStream = new ObjectInputStream(new FileInputStream("catalog"));
 			catalog = (HashMap<String,String>) ObjectInputStream.readObject();
 			ObjectInputStream.close();
 		} catch (FileNotFoundException e) {
@@ -35,9 +46,15 @@ public class UrlCache {
 			e.printStackTrace();
 		}
 		
+		if (ignoreCata) {
+			catalog = new HashMap<String, String>();
+		}
 		
 	}
-	
+
+	public void getNames(String url, String hostName, String pathName, int portNum) {
+
+	}
     /**
      * Downloads the object specified by the parameter url if the local copy is out of date.
 	 *
@@ -46,68 +63,59 @@ public class UrlCache {
      */
 	public void getter(String url) throws IOException {
 		
-		String hostName;
-		String pathName;
-		int portNum;
-		int findSplitIndex;
-		int findColon;
+		//Initialize variables required to parse the url
+		String hostName = "";
+		String pathName = "";
+		int portNum = 0;
 		
-		InputStream inputStream;
+		// Initialize input and output streams
 		PrintWriter outputStream;
-		
+				
+		// Initialize values pulled from header
+		String catalogModifiedDate = "";
 
-		byte[] http_response_header_bytes = new byte[2048];
-		byte[] http_object_bytes = new byte[1024];
-		String httpResString = "";
-		int indexCount = 0;
+		byte[] http_object_bytes = new byte[4096];
 		int numByteRead = 0;
 		
-		Scanner headerS = new Scanner(httpResString);
-		int totalLength = 0;
-		String lastModified = "";
-		String nextL = "";
+		
+		byte[] http_response_header_bytes = new byte[4096];
+		int indexCount = 0;
 		
 
-		
-		// find Index of : and / for url splitting
-		findColon = url.indexOf(":");
-		findSplitIndex = url.indexOf("/");
-		
+
 		// Set hostname/portNum based on above variables
-		if(findColon == -1) {
-			hostName = url.substring(0, findSplitIndex);	
+		if(url.indexOf("/") == -1) {
+			hostName = url.substring(0, url.indexOf("/"));	
 			portNum = 80;
 		} else {
-			hostName = url.substring(0, findColon);
-			portNum = (int) Integer.parseInt(url.substring(findColon + 1, findSplitIndex));
+			hostName = url.substring(0, url.indexOf(":"));
+			portNum = (int) Integer.parseInt(url.substring(url.indexOf(":") + 1, url.indexOf("/")));
 		}
-		
+				
 		// Set pathname
-		pathName = url.substring(findSplitIndex);
-	
-		// Create file structures
-		File newFile = new File(hostName + pathName);
-		newFile.getParentFile().mkdirs();
-		FileOutputStream newFOS = new FileOutputStream(newFile);
-		
-		FileOutputStream modifiedFoS = new FileOutputStream("catalogLoc");
-		ObjectOutputStream oosMod = new ObjectOutputStream(modifiedFoS);
+		pathName = url.substring(url.indexOf("/"));
+
 
 		try {
 			
 			// Creating socket, opening input/output streams
 			Socket socket = new Socket(hostName, portNum);
 			
-			outputStream = new PrintWriter(new DataOutputStream(
-					socket.getOutputStream()));
-			inputStream = socket.getInputStream();			
-						
+			outputStream = new PrintWriter(new DataOutputStream(socket.getOutputStream()));
+			
+			//Gets the last modified date from the catalog
+			if(catalog.containsKey(url)) {
+				catalogModifiedDate = catalog.get(url);
+			}
+			
+			// HTTP GET request and then checks if catalog has been modified
 			outputStream.print("GET " + pathName + " HTTP/1.1\r\n");
-			outputStream.print("If-modified-since: " + lastModified + "\r\n");
+			outputStream.print("If-modified-since: " + catalogModifiedDate + "\r\n");
 			outputStream.print("Host: " + hostName + ":" + portNum + "\r\n");
 			outputStream.print("\r\n");
 			
 			outputStream.flush();
+			
 			
 			try {
 				//Read until end of HTTP header and then break
@@ -119,73 +127,73 @@ public class UrlCache {
 						break;
 					}
 				}
-				
-				
-  			} catch (IOException e) {
-  				//Exception Handling
-  			}
-			
-			// Line by Line - Get total length of content and the last modified date
-			while(headerS.hasNextLine()) {
-				nextL = headerS.nextLine();
-				
-				if(nextL.contains("Content-Length")) {
-					totalLength = Integer.parseInt(nextL.substring(nextL.indexOf(":") + 2));
-				}
-				
-				if(nextL.contains("Last-Modified")) {
-					lastModified = nextL.substring(nextL.indexOf(":") + 2);
+				} catch (IOException e) {
+					//Exception Handling
 				}		
-			}
+
+			Scanner hScanner = new Scanner(httpResString);
 			
+			headerParserClass parseH = new headerParserClass(hScanner);
+			int totalLength = parseH.getTotalLength();
+			String lastModified = parseH.getLastModified();
+			
+			System.out.println(totalLength);
+			System.out.println(lastModified);
+			
+			// File has not bhttpResStringeen changed and is already downloaded, do nothing
 			if(httpResString.contains("304 Not Modified")) {
-				// File has not been changed and is already downloaded, do nothing
+				System.out.println("Files from " + url + " have already been downloaded and have not been changed\n");
 			} else if (httpResString.contains("200 OK")) {
 				int count = 0; 				// Initialize byte counter
-								
+						
+				System.out.println("Downloading Objects from " + url);
+				// Create file structures
+				File newFile = new File(hostName + pathName);
+				newFile.getParentFile().mkdirs();
+				FileOutputStream newFOS = new FileOutputStream(newFile);
+				
 				try {
 					//Read until end of file
-					while(numByteRead != -1) {
+					while(true) {
+						// At end of file, break out of loop
 						if(count == totalLength) {
 							break;
 						}
 						
+						//Read bytes to output stream and increment count by number of bytes read
 						numByteRead = socket.getInputStream().read(http_object_bytes);
 						newFOS.write(http_object_bytes);
+						newFOS.flush();
+						newFOS.getFD().sync();
 						count += numByteRead;
-						System.out.println(count);
 					}
 					newFOS.close();
 				} catch(IOException e) {
 					// didn't DL file
+					System.out.println("Caught IO Exception");
 				}
 				
+				
+				ObjectOutputStream oosMod = new ObjectOutputStream(new FileOutputStream("catalog"));
+								
+				// Write to catalog and close the object output stream
 				catalog.put(url, lastModified);
 				oosMod.writeObject(catalog);
 				oosMod.flush();
 				oosMod.close();
-				
 			}
-			
-			
+		
+			// Close the socket and headerS
 			socket.close();
-			headerS.close();
+			hScanner.close();
 	
 			
 		  } catch (Exception e) {
 			  System.out.println("Error: " + e.getMessage());
 		  }
-			
-
-		
+					
 	}
 	
-    /**
-     * Returns the Last-Modified time associated with the object specified by the parameter url.
-	 *
-     * @param url 	URL of the object 
-	 * @return the Last-Modified time in millisecond as in Date.getTime()
-     */
 	public long LaMo(String url, int counter) throws RuntimeException {
 
 		if(catalog.containsKey(url)) {
@@ -200,5 +208,9 @@ public class UrlCache {
 			throw new RuntimeException();
 		}
 
+	}
+	
+	public String gethttpResString() {
+		return httpResString;
 	}
 }
