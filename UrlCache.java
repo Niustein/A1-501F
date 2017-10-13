@@ -206,28 +206,35 @@ public class UrlCache {
 	public String hostNameParser(String url) {
 		String hostName;
 		
-		// Set hostname/portNum based on above variables
-		if(url.indexOf(":") == -1) {
-			hostName = url.substring(0, url.indexOf("/"));	
+		int forwardSlashIndex = url.indexOf("/");
+		int firstColonIndex = url.indexOf(":");
+		
+		if(firstColonIndex == -1) {
+			hostName = url.substring(0, forwardSlashIndex);	
 		} else {
-			hostName = url.substring(0, url.indexOf(":"));
+			hostName = url.substring(0, firstColonIndex);
 		}
 		return hostName;
 	}
 	
 	public String pathNameParser(String url) {
 
-		return url.substring(url.indexOf("/"));
+		int forwardSlashIndex = url.indexOf("/");
+		
+		return url.substring(forwardSlashIndex);
 	}
 	
 	
 	public int portNumParser(String url) {
 		int portNum = 0;
 		
-		if(url.indexOf(":") == -1) {
+		int firstColonIndex = url.indexOf(":");
+		int forwardSlashIndex = url.indexOf("/");
+		
+		if(firstColonIndex == -1) {
 			portNum = 80;
 		} else {
-			portNum = (int) Integer.parseInt(url.substring(url.indexOf(":") + 1, url.indexOf("/")));
+			portNum = (int) Integer.parseInt(url.substring(firstColonIndex + 1, forwardSlashIndex));
 		}
 		
 		return portNum;
