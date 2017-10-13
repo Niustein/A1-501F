@@ -15,25 +15,25 @@ public class headerParserTester {
 		UrlCache cache;
 		try {
 			cache = new UrlCache(true);
-			cache.getter("people.ucalgary.ca/~mghaderi/index.html");
+			cache.retrieveObject("people.ucalgary.ca/~mghaderi/index.html");
 			headerParserClass HPC = new headerParserClass(new Scanner (cache.gethttpResString()));
 			
 			assertEquals(5974 , HPC.getTotalLength());
 			assertEquals("Fri, 18 Aug 2017 20:44:24 GMT", HPC.getLastModified());
 			
-			cache.getter("people.ucalgary.ca/~mghaderi/test/uc.gif");
+			cache.retrieveObject("people.ucalgary.ca/~mghaderi/test/uc.gif");
 			HPC = new headerParserClass(new Scanner (cache.gethttpResString()));
 
 			assertEquals(3090 , HPC.getTotalLength());
 			assertEquals("Fri, 31 Aug 2007 04:21:06 GMT", HPC.getLastModified());
 			
-			cache.getter("people.ucalgary.ca/~mghaderi/test/a.pdf");
+			cache.retrieveObject("people.ucalgary.ca/~mghaderi/test/a.pdf");
 			HPC = new headerParserClass(new Scanner (cache.gethttpResString()));
 
 			assertEquals(479301 , HPC.getTotalLength());
 			assertEquals("Fri, 24 Jul 2015 20:05:00 GMT", HPC.getLastModified());
 			
-			cache.getter("people.ucalgary.ca:80/~mghaderi/test/test.html");
+			cache.retrieveObject("people.ucalgary.ca:80/~mghaderi/test/test.html");
 			HPC = new headerParserClass(new Scanner (cache.gethttpResString()));
 
 			assertEquals(35 , HPC.getTotalLength());

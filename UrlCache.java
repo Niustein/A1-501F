@@ -61,10 +61,8 @@ public class UrlCache {
      * @param url	URL of the object to be downloaded. It is a fully qualified URL.
      * @throws IOException if encounters any errors/exceptions
      */
-	public void getter(String url) throws IOException {
-		
-		
-		
+	public void retrieveObject(String url) throws IOException {
+				
 		// Initialize input and output streams
 		PrintWriter outputStream;
 				
@@ -188,7 +186,7 @@ public class UrlCache {
      * @param url 	URL of the object 
 	 * @return the Last-Modified time in millisecond as in Date.getTime()
      */
-	public long LaMo(String url, int counter) throws RuntimeException {
+	public long lastModifiedDate(String url, int counter) throws RuntimeException {
 
 		if(catalog.containsKey(url)) {
 			String lastModified = catalog.get(url);
