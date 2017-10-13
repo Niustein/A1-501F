@@ -186,7 +186,7 @@ public class UrlCache {
      * @param url 	URL of the object 
 	 * @return the Last-Modified time in millisecond as in Date.getTime()
      */
-	public long lastModifiedDate(String url, int counter) throws RuntimeException {
+	public long lastModifiedDate(String url) throws RuntimeException {
 
 		if(catalog.containsKey(url)) {
 			String lastModified = catalog.get(url);
